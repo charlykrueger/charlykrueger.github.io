@@ -413,7 +413,7 @@ const aboutPage = {
     <p>Hamburg, Germany</p>
 
     <p>For inquiries:<br>
-    <a href="mailto:charlotte.krueger@gmx.de">charlotte.krueger@gmx.de</a></p>
+    <a href="mailto:charly.krueger@gmx.de">charly.krueger@gmx.de</a></p>
   `
 };
 
