@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting — Charly Krüger</title>
+</head>
+<body>
+  <script>
+    const redirects = {
+      "/about.html": "/#about",
+      "/contact.html": "/#contact",
+      "/01_free_projects.html": "/#rosa",
+      "/02_people.html": "/#unlabeled",
+      "/03_fashion.html": "/#fashion-selected-works",
+      "/04_events.html": "/#call-me",
+      "/05_ongoing_projects.html": "/#sweet-tooth"
+    };
+
+    const target = redirects[window.location.pathname] || "/";
+    window.location.replace(target);
+  </script>
+
+  <p>Redirecting...</p>
+</body>
+</html> 
