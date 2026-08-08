@@ -385,8 +385,7 @@ const projects = [
       ["assets/display-the-system/exhibition/02.jpg"],
       ["assets/display-the-system/exhibition/03.jpg"],
       ["assets/display-the-system/exhibition/04.jpg"],
-      ["assets/display-the-system/exhibition/05.jpg"],
-      ["assets/display-the-system/exhibition/06.jpg"]
+      ["assets/display-the-system/exhibition/05.jpg"]
     ]
   }
 ];
@@ -952,12 +951,31 @@ function createVideoBlock(src) {
   return block;
 }
 
+function getYouTubeVideoId(url) {
+  const match = url.match(/embed\/([^?&]+)/);
+  return match ? match[1] : "";
+}
+
 function createYouTubeBlock(embedUrl, title = "Video") {
   const block = document.createElement("div");
   block.className = "youtube-block";
 
+  const videoId = getYouTubeVideoId(embedUrl);
+
+  const url = new URL(embedUrl);
+  url.searchParams.set("autoplay", "1");
+  url.searchParams.set("mute", "1");
+  url.searchParams.set("playsinline", "1");
+  url.searchParams.set("rel", "0");
+  url.searchParams.set("controls", "1");
+  url.searchParams.set("loop", "1");
+
+  if (videoId) {
+    url.searchParams.set("playlist", videoId);
+  }
+
   const iframe = document.createElement("iframe");
-  iframe.src = embedUrl;
+  iframe.src = url.toString();
   iframe.title = title;
   iframe.loading = "lazy";
   iframe.referrerPolicy = "strict-origin-when-cross-origin";
