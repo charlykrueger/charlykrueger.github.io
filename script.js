@@ -44,7 +44,7 @@ const projects = [
     slug: "reproduktion",
     label: "film / free project",
     layout: "video",
-    youtube: "https://www.youtube.com/embed/DWxzZ8s3cRw",
+    youtube: "https://www.youtube.com/embed/QQ4mDXhgGZw",
     textHtml: `
       <p><strong>REPRODUKTION, 2025</strong></p>
 
@@ -57,6 +57,11 @@ const projects = [
       HAW Hamburg, Kunst- und Mediencampus Hamburg<br>
       31 July 2025</p>
     `,
+    galleryImages: [
+      "assets/reproduktion/01.png",
+      "assets/reproduktion/02.png",
+      "assets/reproduktion/03.png"
+    ],
     fixedImages: []
   },
   {
@@ -230,6 +235,16 @@ const projects = [
       },
       {
         images: [
+          "assets/fashion/ronjablue/01.jpg",
+          "assets/fashion/ronjablue/02.jpg",
+          "assets/fashion/ronjablue/03.jpg"
+        ],
+        textHtml: `
+          <p><strong>RONJA SCHULZ COLLECTION, 2025</strong></p>
+        `
+      },
+      {
+        images: [
           "assets/fashion/jona/01.jpg",
           "assets/fashion/jona/02.jpg",
           "assets/fashion/jona/03.jpg",
@@ -276,8 +291,20 @@ const projects = [
           "assets/music/howtokope/04.jpg"
         ],
         textHtml: `
-          <p><strong>HOW TO KOPE, 2026</strong></p>
-          <p>Press imagery created for How To Kope. The photographs were developed as artist portraits and promotional visuals, translating the band’s visual identity into a compact image series for public communication.</p>
+          <p><strong>HOWTOKOPE, 2026</strong></p>
+          <p>Press imagery created for howtokope. The photographs were developed as artist portraits and promotional visuals, translating the band’s visual identity into a compact image series for public communication.</p>
+        `
+      },
+      {
+        images: [
+          "assets/music/katlixundcosie/01.jpg",
+          "assets/music/katlixundcosie/02.jpg",
+          "assets/music/katlixundcosie/03.jpg",
+          "assets/music/katlixundcosie/04.jpg"
+        ],
+        textHtml: `
+          <p><strong>KATLIX &amp; COSIE, 2025</strong></p>
+          <p>Live photography from a joint performance by katlix and COSIE as support for RITALIN. The images bring together stage moments from both artists; one image was also used as the cover for COSIE’s first album.</p>
         `
       },
       {
@@ -286,7 +313,8 @@ const projects = [
           "assets/music/greta/02.jpg",
           "assets/music/greta/03.jpg",
           "assets/music/greta/04.jpg",
-          "assets/music/greta/05.jpg"
+          "assets/music/greta/05.jpg",
+          "assets/music/greta/06.jpg"
         ],
         textHtml: `
           <p><strong>GRETA — SONNE UND SCHMERZ TOUR, 2025</strong></p>
@@ -415,7 +443,7 @@ const aboutPage = {
     <p>Hamburg, Germany</p>
 
     <p>For inquiries:<br>
-    <a href="mailto:charly.krueger@gmx.de">charly.krueger@gmx.de</a></p>
+    <a href="mailto:charlotte.krueger@gmx.de">charlotte.krueger@gmx.de</a></p>
   `
 };
 
@@ -539,6 +567,10 @@ function renderProject(slug, shouldUpdateHash = true) {
 
   if (project.layout === "single") {
     content.appendChild(createSingleGallery(project));
+  }
+
+  if (project.layout === "video" && project.galleryImages && project.galleryImages.length) {
+    content.appendChild(createRunningGalleryFromImages(project.galleryImages, project.title));
   }
 
   if (project.layout === "video" && project.youtube) {
@@ -693,15 +725,15 @@ function lockRunningGalleryHeight(gallery, items, visibleCount, options = {}) {
     function calculateHeight() {
       const galleryWidth = viewport.clientWidth;
       const gap = options.size === "small" ? 18 : 28;
-      const frameWidth =
+      const normalFrameWidth =
         (galleryWidth - gap * (visibleCount - 1)) / visibleCount;
 
       let maxHeight = 0;
 
       items.forEach((item) => {
         if (Array.isArray(item)) {
-          const pairGap = 12;
-          const pairImageWidth = (frameWidth - pairGap) / 2;
+          const pairGap = 28;
+          const pairImageWidth = (galleryWidth - pairGap) / 2;
 
           item.forEach((src) => {
             const data = validImages.find((img) => img.src === src);
@@ -714,7 +746,7 @@ function lockRunningGalleryHeight(gallery, items, visibleCount, options = {}) {
           const data = validImages.find((img) => img.src === item);
           if (!data) return;
 
-          const imageHeight = frameWidth * (data.height / data.width);
+          const imageHeight = normalFrameWidth * (data.height / data.width);
           maxHeight = Math.max(maxHeight, imageHeight);
         }
       });
@@ -728,11 +760,135 @@ function lockRunningGalleryHeight(gallery, items, visibleCount, options = {}) {
   });
 }
 
+function createPairedFadeGallery(items, title) {
+  const gallery = document.createElement("div");
+  gallery.className = "paired-gallery";
+
+  const viewport = document.createElement("div");
+  viewport.className = "paired-viewport";
+
+  gallery.appendChild(viewport);
+
+  const flatImages = flattenGalleryItems(items);
+  const slides = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+
+    if (Array.isArray(item)) {
+      slides.push(item);
+    } else {
+      const nextItem = items[i + 1];
+
+      if (nextItem && !Array.isArray(nextItem)) {
+        slides.push([item, nextItem]);
+        i++;
+      } else {
+        slides.push([item]);
+      }
+    }
+  }
+
+  slides.forEach((slideImages, slideIndex) => {
+    const slide = document.createElement("div");
+    slide.className = slideIndex === 0 ? "paired-slide is-active" : "paired-slide";
+
+    if (slideImages.length === 1) {
+      slide.classList.add("single");
+    }
+
+    slideImages.forEach((src) => {
+      const img = createImage(src, `${title}, image`);
+      const imageIndex = flatImages.indexOf(src);
+
+      img.addEventListener("click", () => openLightbox(flatImages, imageIndex));
+
+      slide.appendChild(img);
+    });
+
+    viewport.appendChild(slide);
+  });
+
+  const imagePromises = flatImages.map((src) => {
+    return new Promise((resolve) => {
+      const image = new Image();
+
+      image.onload = () => {
+        resolve({
+          src,
+          width: image.naturalWidth,
+          height: image.naturalHeight
+        });
+      };
+
+      image.onerror = () => {
+        resolve(null);
+      };
+
+      image.src = src;
+    });
+  });
+
+  Promise.all(imagePromises).then((loadedImages) => {
+    const validImages = loadedImages.filter(Boolean);
+    if (!validImages.length) return;
+
+    function calculateHeight() {
+      const galleryWidth = viewport.clientWidth;
+      const gap = 28;
+      let maxHeight = 0;
+
+      slides.forEach((slideImages) => {
+        const imageWidth =
+          slideImages.length === 2
+            ? (galleryWidth - gap) / 2
+            : Math.min(galleryWidth * 0.5, 720);
+
+        slideImages.forEach((src) => {
+          const data = validImages.find((img) => img.src === src);
+          if (!data) return;
+
+          const imageHeight = imageWidth * (data.height / data.width);
+          maxHeight = Math.max(maxHeight, imageHeight);
+        });
+      });
+
+      gallery.style.setProperty("--paired-gallery-height", `${maxHeight}px`);
+      gallery.classList.add("is-height-locked");
+    }
+
+    calculateHeight();
+    window.addEventListener("resize", calculateHeight);
+  });
+
+  let currentSlide = 0;
+
+  function showNextSlide() {
+    const slideElements = Array.from(viewport.querySelectorAll(".paired-slide"));
+    if (slideElements.length <= 1) return;
+
+    slideElements[currentSlide].classList.remove("is-active");
+
+    currentSlide = (currentSlide + 1) % slideElements.length;
+
+    slideElements[currentSlide].classList.add("is-active");
+  }
+
+  const interval = setInterval(showNextSlide, 3600);
+  runningIntervals.push(interval);
+
+  return gallery;
+}
+
 function createRunningGalleryFromImages(images, title, options = {}) {
   return createRunningGalleryFromItems(images, title, options);
 }
 
 function createRunningGalleryFromItems(items, title, options = {}) {
+  if (items.some((item) => Array.isArray(item))) {
+    return createPairedFadeGallery(items, title);
+  }
+
   const gallery = document.createElement("div");
   gallery.className = "running-gallery";
 
@@ -812,17 +968,16 @@ function createRunningGalleryFromItems(items, title, options = {}) {
   }
 
   function slideNext() {
-    if (isAnimating || pause || items.length <= visibleCount) return;
+    if (isAnimating || pause || items.length <= 1) return;
 
     isAnimating = true;
 
-    strip.style.transition = "transform 950ms cubic-bezier(0.76, 0, 0.24, 1)";
+    const firstFrame = strip.querySelector(".running-frame");
+    const stripGap = options.size === "small" ? 18 : 28;
+    const moveAmount = firstFrame ? firstFrame.offsetWidth + stripGap : 0;
 
-    if (options.size === "small") {
-      strip.style.transform = "translateX(calc(-25% - 4.5px))";
-    } else {
-      strip.style.transform = "translateX(calc(-50% - 14px))";
-    }
+    strip.style.transition = "transform 950ms cubic-bezier(0.76, 0, 0.24, 1)";
+    strip.style.transform = `translateX(-${moveAmount}px)`;
 
     strip.addEventListener(
       "transitionend",
@@ -841,7 +996,7 @@ function createRunningGalleryFromItems(items, title, options = {}) {
   }
 
   function slidePrevious() {
-    if (isAnimating || items.length <= visibleCount) return;
+    if (isAnimating || items.length <= 1) return;
 
     currentIndex = (currentIndex - 1 + items.length) % items.length;
     buildStrip();
@@ -954,8 +1109,16 @@ function createVideoBlock(src) {
 }
 
 function getYouTubeVideoId(url) {
-  const match = url.match(/embed\/([^?&]+)/);
-  return match ? match[1] : "";
+  const embedMatch = url.match(/embed\/([^?&]+)/);
+  if (embedMatch) return embedMatch[1];
+
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  if (shortMatch) return shortMatch[1];
+
+  const watchMatch = url.match(/[?&]v=([^?&]+)/);
+  if (watchMatch) return watchMatch[1];
+
+  return "";
 }
 
 function createYouTubeBlock(embedUrl, title = "Video") {
@@ -963,8 +1126,9 @@ function createYouTubeBlock(embedUrl, title = "Video") {
   block.className = "youtube-block";
 
   const videoId = getYouTubeVideoId(embedUrl);
+  const baseUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : embedUrl;
 
-  const url = new URL(embedUrl);
+  const url = new URL(baseUrl);
   url.searchParams.set("autoplay", "1");
   url.searchParams.set("mute", "1");
   url.searchParams.set("playsinline", "1");

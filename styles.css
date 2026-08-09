@@ -372,9 +372,10 @@ button {
 }
 
 .running-frame-pair {
+  flex: 0 0 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 28px;
 }
 
 .running-gallery.is-height-locked .running-frame-pair {
@@ -390,6 +391,61 @@ button {
 
 .running-arrow {
   display: none;
+}
+
+/* ---------- PAIRED FADE GALLERY ---------- */
+
+.paired-gallery {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 90px;
+}
+
+.paired-viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.paired-gallery.is-height-locked .paired-viewport {
+  height: var(--paired-gallery-height);
+}
+
+.paired-slide {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 850ms ease;
+}
+
+.paired-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.paired-slide.single {
+  grid-template-columns: 1fr;
+}
+
+.paired-slide.single img {
+  width: min(50%, 720px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.paired-slide img {
+  width: 100%;
+  max-height: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
 }
 
 /* ---------- SMALL RUNNING GALLERY ---------- */
@@ -863,11 +919,24 @@ button {
   }
 
   .running-frame-pair {
-    gap: 8px;
+    flex: 0 0 100%;
+    gap: 18px;
   }
 
   .running-arrow {
     display: none;
+  }
+
+  .paired-gallery {
+    margin-bottom: 52px;
+  }
+
+  .paired-slide {
+    gap: 18px;
+  }
+
+  .paired-slide.single img {
+    width: 100%;
   }
 
   .running-gallery-small {
