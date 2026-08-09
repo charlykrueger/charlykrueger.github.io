@@ -166,7 +166,6 @@ const projects = [
     layout: "fashion",
     textHtml: `
       <p><strong>THE OYSTER, 2026</strong></p>
-      <p>Photographic work for Elin’s collection <em>The Oyster</em>. The series approaches the collection through staged fashion imagery, focusing on texture, form and atmosphere.</p>
     `,
     galleryImages: [
       "assets/fashion/elin/01.jpg",
@@ -194,7 +193,6 @@ const projects = [
         youtube: "https://www.youtube.com/embed/6ydjngjs72Y",
         textHtml: `
           <p><strong>SILENT &amp; CARAMELLO, 2026</strong></p>
-          <p>Fashion imagery for Ronja Schulz’s collection <em>Silent &amp; Caramello</em>. The series documents the collection through staged images, details and atmospheric visual moments.</p>
         `
       },
       {
@@ -209,20 +207,25 @@ const projects = [
         ],
         textHtml: `
           <p><strong>AMY ELISE BA COLLECTION, 2026</strong></p>
-          <p>Photographic work for Amy Elise’s bachelor collection. The images were created as a visual translation of the collection, combining portrait, styling and garment-focused details.</p>
         `
       },
       {
         images: [
-          "assets/fashion/ann/AnnBachelor_Charly_Krueger-12.jpg",
-          "assets/fashion/ann/AnnBachelor_Charly_Krueger-14.jpg",
-          "assets/fashion/ann/AnnBachelor_Charly_Krueger-24.jpg",
-          "assets/fashion/ann/AnnBachelor_Charly_Krueger-33.jpg"
+          "assets/fashion/ann/01.jpg",
+          "assets/fashion/ann/02.jpg",
+          "assets/fashion/ann/03.jpg",
+          "assets/fashion/ann/04.jpg",
+          "assets/fashion/ann/05.jpg",
+          "assets/fashion/ann/06.jpg",
+          "assets/fashion/ann/07.jpg",
+          "assets/fashion/ann/08.jpg",
+          "assets/fashion/ann/09.jpg",
+          "assets/fashion/ann/10.jpg",
+          "assets/fashion/ann/11.jpg"
         ],
         video: "assets/fashion/ann/M2U00094.mp4",
         textHtml: `
           <p><strong>ANN WATERLING BA COLLECTION, 2026</strong></p>
-          <p>Photographic work for Ann Waterling’s bachelor collection. The series focuses on silhouette, material and atmosphere, documenting the collection through staged fashion imagery.</p>
         `
       },
       {
@@ -235,7 +238,6 @@ const projects = [
         ],
         textHtml: `
           <p><strong>JOPE COLLECTION, 2026</strong></p>
-          <p>Photographic work for Jope’s collection. The images document garments, styling and mood through a clean editorial approach.</p>
         `
       }
     ],
@@ -1146,6 +1148,53 @@ function getInitialRoute() {
   return "rosa";
 }
 
+function initCustomCursor() {
+  const customCursor = document.getElementById("customCursor");
+
+  if (!customCursor) return;
+
+  const isTouchDevice =
+    window.matchMedia("(pointer: coarse)").matches ||
+    "ontouchstart" in window;
+
+  if (isTouchDevice) return;
+
+  document.body.classList.add("custom-cursor-enabled");
+
+  document.addEventListener("mousemove", (event) => {
+    customCursor.classList.add("is-visible");
+    customCursor.style.left = `${event.clientX}px`;
+    customCursor.style.top = `${event.clientY}px`;
+  });
+
+  document.addEventListener("mouseleave", () => {
+    customCursor.classList.remove("is-visible");
+  });
+
+  function bindCursorHoverStates() {
+    document.querySelectorAll("a, button, img, video, iframe").forEach((element) => {
+      element.addEventListener("mouseenter", () => {
+        customCursor.classList.add("is-hovering");
+      });
+
+      element.addEventListener("mouseleave", () => {
+        customCursor.classList.remove("is-hovering");
+      });
+    });
+  }
+
+  bindCursorHoverStates();
+
+  const observer = new MutationObserver(() => {
+    bindCursorHoverStates();
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
 renderWorkList();
 
 const initialRoute = getInitialRoute();
@@ -1155,3 +1204,5 @@ if (initialRoute === "about") {
 } else {
   renderProject(initialRoute, false);
 }
+
+initCustomCursor();
