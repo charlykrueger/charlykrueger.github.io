@@ -468,11 +468,45 @@ let activeProject = projects[0];
 let activeSingleIndex = 0;
 let lightboxImages = [];
 let lightboxIndex = 0;
-let runningIntervals = [];
+
+let galleryControllers = [];
+let galleryTimer = null;
+let galleryStartTimer = null;
 
 function clearRunningIntervals() {
-  runningIntervals.forEach((interval) => clearInterval(interval));
-  runningIntervals = [];
+  if (galleryTimer) {
+    clearInterval(galleryTimer);
+    galleryTimer = null;
+  }
+
+  if (galleryStartTimer) {
+    clearTimeout(galleryStartTimer);
+    galleryStartTimer = null;
+  }
+
+  galleryControllers = [];
+}
+
+function registerGalleryController(controller) {
+  galleryControllers.push(controller);
+}
+
+function startRunningGalleries() {
+  if (!galleryControllers.length) return;
+
+  if (galleryTimer) clearInterval(galleryTimer);
+  if (galleryStartTimer) clearTimeout(galleryStartTimer);
+
+  function tickAllGalleries() {
+    galleryControllers.forEach((controller) => {
+      controller.slideNext();
+    });
+  }
+
+  galleryStartTimer = setTimeout(() => {
+    tickAllGalleries();
+    galleryTimer = setInterval(tickAllGalleries, 3600);
+  }, 650);
 }
 
 function renderWorkList() {
@@ -573,10 +607,6 @@ function renderProject(slug, shouldUpdateHash = true) {
     content.appendChild(createRunningGalleryFromImages(project.galleryImages, project.title));
   }
 
-  if (project.layout === "video" && project.youtube) {
-    content.appendChild(createYouTubeBlock(project.youtube, project.title));
-  }
-
   if (project.layout === "scroll") {
     content.appendChild(createRunningGalleryFromImages(project.galleryImages, project.title));
   }
@@ -605,6 +635,10 @@ function renderProject(slug, shouldUpdateHash = true) {
 
   content.appendChild(text);
 
+  if (project.layout === "video" && project.youtube) {
+    content.appendChild(createYouTubeBlock(project.youtube, project.title));
+  }
+
   if (project.layout === "unlabeled") {
     content.appendChild(createUnlabeledCsdGallery(project));
   } else if (project.layout === "fashion") {
@@ -617,6 +651,8 @@ function renderProject(slug, shouldUpdateHash = true) {
 
   article.appendChild(content);
   projectView.appendChild(article);
+
+  startRunningGalleries();
 
   window.scrollTo({ top: 0, behavior: "instant" });
 }
@@ -696,7 +732,7 @@ function lockRunningGalleryHeight(gallery, items, visibleCount, options = {}) {
   const viewport = gallery.querySelector(".running-viewport");
   if (!viewport) return;
 
-  const flatItems = items.flatMap((item) => Array.isArray(item) ? item : [item]);
+  const flatItems = flattenGalleryItems(items);
 
   const imagePromises = flatItems.map((src) => {
     return new Promise((resolve) => {
@@ -732,8 +768,8 @@ function lockRunningGalleryHeight(gallery, items, visibleCount, options = {}) {
 
       items.forEach((item) => {
         if (Array.isArray(item)) {
-          const pairGap = 28;
-          const pairImageWidth = (galleryWidth - pairGap) / 2;
+          const pairGap = 12;
+          const pairImageWidth = (normalFrameWidth - pairGap) / 2;
 
           item.forEach((src) => {
             const data = validImages.find((img) => img.src === src);
@@ -760,135 +796,11 @@ function lockRunningGalleryHeight(gallery, items, visibleCount, options = {}) {
   });
 }
 
-function createPairedFadeGallery(items, title) {
-  const gallery = document.createElement("div");
-  gallery.className = "paired-gallery";
-
-  const viewport = document.createElement("div");
-  viewport.className = "paired-viewport";
-
-  gallery.appendChild(viewport);
-
-  const flatImages = flattenGalleryItems(items);
-  const slides = [];
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-
-    if (Array.isArray(item)) {
-      slides.push(item);
-    } else {
-      const nextItem = items[i + 1];
-
-      if (nextItem && !Array.isArray(nextItem)) {
-        slides.push([item, nextItem]);
-        i++;
-      } else {
-        slides.push([item]);
-      }
-    }
-  }
-
-  slides.forEach((slideImages, slideIndex) => {
-    const slide = document.createElement("div");
-    slide.className = slideIndex === 0 ? "paired-slide is-active" : "paired-slide";
-
-    if (slideImages.length === 1) {
-      slide.classList.add("single");
-    }
-
-    slideImages.forEach((src) => {
-      const img = createImage(src, `${title}, image`);
-      const imageIndex = flatImages.indexOf(src);
-
-      img.addEventListener("click", () => openLightbox(flatImages, imageIndex));
-
-      slide.appendChild(img);
-    });
-
-    viewport.appendChild(slide);
-  });
-
-  const imagePromises = flatImages.map((src) => {
-    return new Promise((resolve) => {
-      const image = new Image();
-
-      image.onload = () => {
-        resolve({
-          src,
-          width: image.naturalWidth,
-          height: image.naturalHeight
-        });
-      };
-
-      image.onerror = () => {
-        resolve(null);
-      };
-
-      image.src = src;
-    });
-  });
-
-  Promise.all(imagePromises).then((loadedImages) => {
-    const validImages = loadedImages.filter(Boolean);
-    if (!validImages.length) return;
-
-    function calculateHeight() {
-      const galleryWidth = viewport.clientWidth;
-      const gap = 28;
-      let maxHeight = 0;
-
-      slides.forEach((slideImages) => {
-        const imageWidth =
-          slideImages.length === 2
-            ? (galleryWidth - gap) / 2
-            : Math.min(galleryWidth * 0.5, 720);
-
-        slideImages.forEach((src) => {
-          const data = validImages.find((img) => img.src === src);
-          if (!data) return;
-
-          const imageHeight = imageWidth * (data.height / data.width);
-          maxHeight = Math.max(maxHeight, imageHeight);
-        });
-      });
-
-      gallery.style.setProperty("--paired-gallery-height", `${maxHeight}px`);
-      gallery.classList.add("is-height-locked");
-    }
-
-    calculateHeight();
-    window.addEventListener("resize", calculateHeight);
-  });
-
-  let currentSlide = 0;
-
-  function showNextSlide() {
-    const slideElements = Array.from(viewport.querySelectorAll(".paired-slide"));
-    if (slideElements.length <= 1) return;
-
-    slideElements[currentSlide].classList.remove("is-active");
-
-    currentSlide = (currentSlide + 1) % slideElements.length;
-
-    slideElements[currentSlide].classList.add("is-active");
-  }
-
-  const interval = setInterval(showNextSlide, 3600);
-  runningIntervals.push(interval);
-
-  return gallery;
-}
-
 function createRunningGalleryFromImages(images, title, options = {}) {
   return createRunningGalleryFromItems(images, title, options);
 }
 
 function createRunningGalleryFromItems(items, title, options = {}) {
-  if (items.some((item) => Array.isArray(item))) {
-    return createPairedFadeGallery(items, title);
-  }
-
   const gallery = document.createElement("div");
   gallery.className = "running-gallery";
 
@@ -920,7 +832,6 @@ function createRunningGalleryFromItems(items, title, options = {}) {
 
   let currentIndex = 0;
   let isAnimating = false;
-  let pause = false;
 
   const visibleCount = options.visibleCount || 2;
   const frameCount = visibleCount + 1;
@@ -936,13 +847,17 @@ function createRunningGalleryFromItems(items, title, options = {}) {
       item.forEach((src) => {
         const img = createImage(src, `${title}, paired image`);
         const imageIndex = flatImages.indexOf(src);
+
         img.addEventListener("click", () => openLightbox(flatImages, imageIndex));
+
         frame.appendChild(img);
       });
     } else {
       const img = createImage(item, `${title}, image`);
       const imageIndex = flatImages.indexOf(item);
+
       img.addEventListener("click", () => openLightbox(flatImages, imageIndex));
+
       frame.appendChild(img);
     }
 
@@ -968,7 +883,7 @@ function createRunningGalleryFromItems(items, title, options = {}) {
   }
 
   function slideNext() {
-    if (isAnimating || pause || items.length <= 1) return;
+    if (isAnimating || items.length <= 1) return;
 
     isAnimating = true;
 
@@ -1006,21 +921,12 @@ function createRunningGalleryFromItems(items, title, options = {}) {
 
   lockRunningGalleryHeight(gallery, items, visibleCount, options);
 
-  setTimeout(slideNext, 650);
-
-  const interval = setInterval(slideNext, 3600);
-  runningIntervals.push(interval);
+  registerGalleryController({
+    slideNext
+  });
 
   prev.addEventListener("click", slidePrevious);
   next.addEventListener("click", slideNext);
-
-  gallery.addEventListener("mouseenter", () => {
-    pause = true;
-  });
-
-  gallery.addEventListener("mouseleave", () => {
-    pause = false;
-  });
 
   return gallery;
 }
@@ -1192,6 +1098,8 @@ function createFixedImages(project) {
   const wrapper = document.createElement("div");
   wrapper.className = "fixed-images";
 
+  const allFixedImages = project.fixedImages.flat();
+
   project.fixedImages.forEach((group) => {
     const block = document.createElement("div");
 
@@ -1201,9 +1109,12 @@ function createFixedImages(project) {
       block.className = "image-block one center";
     }
 
-    group.forEach((src, imageIndex) => {
-      const img = createImage(src, `${project.title}, additional image ${imageIndex + 1}`);
-      img.addEventListener("click", () => openLightbox(group, imageIndex));
+    group.forEach((src) => {
+      const img = createImage(src, `${project.title}, additional image`);
+      const imageIndex = allFixedImages.indexOf(src);
+
+      img.addEventListener("click", () => openLightbox(allFixedImages, imageIndex));
+
       block.appendChild(img);
     });
 

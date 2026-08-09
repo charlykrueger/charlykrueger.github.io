@@ -393,6 +393,23 @@ button {
   display: none;
 }
 
+/* ---------- REPRODUCTION PEEK GALLERY ---------- */
+
+.running-gallery-peek {
+  margin-bottom: 70px;
+}
+
+.running-gallery-peek .running-frame {
+  flex: 0 0 70%;
+}
+
+.running-gallery-peek .running-frame img {
+  width: 100%;
+  height: auto;
+  max-height: 82vh;
+  object-fit: contain;
+}
+
 /* ---------- PAIRED FADE GALLERY ---------- */
 
 .paired-gallery {
@@ -921,6 +938,14 @@ button {
   .running-frame-pair {
     flex: 0 0 100%;
     gap: 18px;
+  }
+
+  .running-gallery-peek .running-frame {
+    flex: 0 0 82%;
+  }
+
+  .running-gallery-peek .running-frame img {
+    max-height: 70vh;
   }
 
   .running-arrow {
